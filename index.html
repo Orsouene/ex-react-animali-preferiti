@@ -15,24 +15,55 @@
     <!-- Component -->
     <script type="text/babel">
       const { useState } = React;
-      const animalsChoices = [
-        "Cane",
-        "Gatto",
-        "Pappagallo",
-        "Cavallo",
-        "Panda",
-      ];
+      // const animalsChoices = [
+      //   "Cane",
+      //   "Gatto",
+      //   "Pappagallo",
+      //   "Cavallo",
+      //   "Panda",
+      // ];
+      function Modal({
+        title,
+        content,
+        show = false,
+        onClose = () => {},
+        onConfirm = () => {},
+      }) {
+        return (
+          show &&
+          ReactDOM.createPortal(
+            <div className="modal-container">
+              <div className="modal">
+                <h2>{title}</h2>
+                {content}
+                <div>
+                  <button onClick={onClose}>Annulla</button>
+                  <button onClick={onConfirm}>Conferma</button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        );
+      }
 
       const ReactApp = () => {
         const [animals, setAnimals] = useState([]);
+        const [show, setShow] = useState(false);
+        const [name, setName] = useState("");
         const addAnimal = () => {
-          let rand = Math.floor(Math.random() * animalsChoices.length);
-          // console.log(rand);
-          let addingAnimal = animalsChoices[rand];
-          if (!animals.includes(addingAnimal)) {
-            setAnimals([...animals, addingAnimal]);
+          setShow(true);
+        };
+        const onClose = () => setShow(false);
+        const onConfirm = () => {
+          if (name.trim() !== "") {
+            console.log(name);
+            setAnimals([...animals, name]);
+            setName(""); // Resetta il campo input
+            setShow(false); // Chiude il modale
           }
         };
+
         return (
           <>
             <button onClick={addAnimal}>Aggiungi Animale</button>
@@ -45,6 +76,18 @@
                 ))}
               </ul>
             </details>
+            <Modal
+              show={show}
+              content={
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              }
+              onClose={onClose}
+              onConfirm={onConfirm}
+            />
           </>
         );
       };
