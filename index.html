@@ -22,13 +22,7 @@
       //   "Cavallo",
       //   "Panda",
       // ];
-      function Modal({
-        title,
-        content,
-        show = false,
-        onClose = () => {},
-        onConfirm = () => {},
-      }) {
+      function Modal({ title, content, show = false, onClose, onConfirm }) {
         return (
           show &&
           ReactDOM.createPortal(
@@ -51,17 +45,49 @@
         const [animals, setAnimals] = useState([]);
         const [show, setShow] = useState(false);
         const [name, setName] = useState("");
+        const [loading, setLoading] = useState(false);
+        const [errorMessage, setErrorMessage] = useState("");
         const addAnimal = () => {
           setShow(true);
         };
+
+        //  close function
         const onClose = () => setShow(false);
-        const onConfirm = () => {
-          if (name.trim() !== "") {
-            console.log(name);
-            setAnimals([...animals, name]);
-            setName(""); // Resetta il campo input
-            setShow(false); // Chiude il modale
+        // Confirme function
+        const onConfirm = async (name) => {
+          setLoading(true);
+          setErrorMessage("");
+          let SearchAnimal;
+          try {
+            const fetchanimalName = await fetch(
+              `https://boolean-spec-frontend.vercel.app/freetestapi/animals?search=${name}`
+            );
+            SearchAnimal = await fetchanimalName.json();
+            // console.log(SearchAnimal);
+            // console.log("the name is :", SearchAnimal[0].name);
+            const animal = {
+              name: SearchAnimal.name || "nome non trovato",
+              description:
+                SearchAnimal.description || "description non trovato",
+              image: SearchAnimal.image || null,
+            };
+
+            setAnimals([...animals, ...SearchAnimal]);
+            setName("");
+            setLoading(false);
+            setShow(false);
+            if (!SearchAnimal || SearchAnimal.length === 0) {
+              throw new Error("Nessun animale trovato.");
+            }
+          } catch (error) {
+            const message =
+              error.message === "Nessun animale trovato"
+                ? "Nessun animale trovato"
+                : "richiesta non andata a buon fine ";
+            setErrorMessage("richiesta non andata a buon fine ");
           }
+          return SearchAnimal;
+          // console.log(name);
         };
 
         return (
@@ -70,23 +96,31 @@
             <details>
               <summary>Animali</summary>
 
-              <ul>
-                {animals.map((animale) => (
-                  <li key={animale}>{animale}</li>
+              <div className="card">
+                {animals.map((animale, index) => (
+                  <div key={index}>
+                    <p>{animale.name}</p>
+                    <p>{animale.description}</p>
+                    <img src={animale.image} alt="" />
+                  </div>
                 ))}
-              </ul>
+                {errorMessage && <p>{errorMessage}</p>}
+              </div>
             </details>
             <Modal
               show={show}
               content={
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
+                <>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                  {loading && <p>Loading...</p>}
+                </>
               }
               onClose={onClose}
-              onConfirm={onConfirm}
+              onConfirm={() => onConfirm(name)}
             />
           </>
         );
